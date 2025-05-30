@@ -9,6 +9,7 @@ import java.time.LocalDate;
 public class Sale {
     @Id
     private String id;
+    napisal xuetu
 
     private String productName;
 
