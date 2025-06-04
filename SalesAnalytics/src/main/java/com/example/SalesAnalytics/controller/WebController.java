@@ -1,7 +1,7 @@
 package com.example.SalesAnalytics.controller;
 
-import com.example.SalesAnalytics.model.Product;
-import com.example.SalesAnalytics.repository.ProductRepository;
+import com.example.SalesAnalytics.model.*;
+import com.example.SalesAnalytics.repository.*;
 import com.example.SalesAnalytics.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,8 +21,12 @@ public class WebController {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private SaleRepository saleRepository;
+
     @GetMapping("/sales")
     public String showHome(Model model) {
+        System.out.println("Accessing home page at /sales");
         return "index";
     }
 
@@ -34,11 +38,12 @@ public class WebController {
     }
 
     @PostMapping("/sales/add-product")
-    public String addProduct(@RequestParam String name, @RequestParam String description, @RequestParam double price) {
+    public String addProduct(@RequestParam String name, @RequestParam String description, @RequestParam double price, @RequestParam int quantity) {
         Product product = new Product();
         product.setName(name);
         product.setDescription(description);
         product.setPrice(price);
+        product.setQuantity(quantity); // Установка количества
         productRepository.save(product);
         return "redirect:/sales/catalog";
     }
@@ -46,6 +51,35 @@ public class WebController {
     @PostMapping("/sales/delete-product")
     public String deleteProduct(@RequestParam String id) {
         productRepository.deleteById(id);
+        return "redirect:/sales/catalog";
+    }
+
+    @PostMapping("/sales/sell-product")
+    public String sellProduct(@RequestParam String id) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product != null && product.getQuantity() > 0) {
+            // Уменьшаем количество товара
+            product.setQuantity(product.getQuantity() - 1);
+            productRepository.save(product);
+
+            // Добавляем запись о продаже
+            Sale sale = new Sale();
+            sale.setProductId(product.getId());
+            sale.setQuantity(1);
+            sale.setTotalPrice(product.getPrice() * 1);
+            sale.setSaleDate(LocalDate.now());
+            saleRepository.save(sale);
+        }
+        return "redirect:/sales/catalog";
+    }
+
+    @PostMapping("/sales/receive-product")
+    public String receiveProduct(@RequestParam String id) {
+        Product product = productRepository.findById(id).orElse(null);
+        if (product != null) {
+            product.setQuantity(product.getQuantity() + 1);
+            productRepository.save(product);
+        }
         return "redirect:/sales/catalog";
     }
 

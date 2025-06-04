@@ -13,6 +13,7 @@ public class Product {
     private String description;
 
     private double price;
+    private int quantity;
 
     // Getters and Setters
     public String getId() { return id; }
@@ -23,4 +24,11 @@ public class Product {
     public void setDescription(String description) { this.description = description; }
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
 }

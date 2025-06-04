@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class SaleService {
@@ -90,18 +91,53 @@ public class SaleService {
     }
 
     public Map<String, Integer> calculateProductionPlan(LocalDate startDate, LocalDate endDate) {
-        Map<String, Integer> productionPlan = new HashMap<>();
-        List<Sale> sales = saleRepository.findBySaleDateBetween(startDate, endDate);
+        // Период для анализа продаж (например, последние 3 месяца)
+        LocalDate analysisStartDate = LocalDate.now().minusMonths(3);
+        LocalDate analysisEndDate = LocalDate.now();
+        List<Sale> sales = saleRepository.findBySaleDateBetween(analysisStartDate, analysisEndDate);
+
+        // Получаем все товары
         Map<String, Product> productMap = productRepository.findAll()
                 .stream()
                 .collect(Collectors.toMap(Product::getId, product -> product));
 
+        // Подсчитываем продажи по товарам
+        Map<String, Integer> totalSalesByProduct = new HashMap<>();
         for (Sale sale : sales) {
             Product product = productMap.get(sale.getProductId());
             if (product != null) {
-                productionPlan.merge(product.getName(), sale.getQuantity(), Integer::sum);
+                totalSalesByProduct.merge(product.getId(), sale.getQuantity(), Integer::sum);
             }
         }
+
+        // Рассчитываем план производства
+        Map<String, Integer> productionPlan = new HashMap<>();
+        long daysInPeriod = ChronoUnit.DAYS.between(analysisStartDate, analysisEndDate) + 1; // +1, чтобы включить последний день
+        int daysToPlan = 30; // Планируем на следующий месяц (30 дней)
+        double bufferStockPercentage = 0.2; // 20% запас
+
+        for (Product product : productMap.values()) {
+            String productId = product.getId();
+            int totalSales = totalSalesByProduct.getOrDefault(productId, 0);
+
+            // Средняя скорость продаж в день
+            double dailySalesRate = (double) totalSales / daysInPeriod;
+
+            // Прогнозируемый спрос на следующий месяц
+            double forecastDemand = dailySalesRate * daysToPlan;
+
+            // Добавляем минимальный запас
+            double bufferStock = forecastDemand * bufferStockPercentage;
+            double totalDemand = forecastDemand + bufferStock;
+
+            // Учитываем текущий остаток
+            int currentStock = product.getQuantity();
+            int productionQuantity = (int) Math.round(totalDemand - currentStock);
+
+            // Если результат отрицательный, производить не нужно
+            productionPlan.put(product.getName(), Math.max(productionQuantity, 0));
+        }
+
         return productionPlan;
     }
 }
