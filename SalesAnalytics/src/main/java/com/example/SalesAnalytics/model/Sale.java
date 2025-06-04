@@ -7,19 +7,15 @@ import java.time.LocalDate;
 
 @Document(collection = "sales")
 public class Sale {
+
     @Id
     private String id;
-    napisal xuetu
-
-    private String productName;
-
+    private String productId;
     private int quantity;
-
-    private double price;
-
+    private double totalPrice;
     private LocalDate saleDate;
 
-    // Getters and Setters
+    // Геттеры и сеттеры
     public String getId() {
         return id;
     }
@@ -28,12 +24,12 @@ public class Sale {
         this.id = id;
     }
 
-    public String getProductName() {
-        return productName;
+    public String getProductId() {
+        return productId;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
     public int getQuantity() {
@@ -44,12 +40,12 @@ public class Sale {
         this.quantity = quantity;
     }
 
-    public double getPrice() {
-        return price;
+    public double getTotalPrice() {
+        return totalPrice;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public void setTotalPrice(double totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     public LocalDate getSaleDate() {
